@@ -1,49 +1,40 @@
-from instabot import Bot
-from time import sleep
+import instaloader
+import secrets
 import send_email
-from os import environ
+from time import sleep
 
 
-def get_following():
-    following_list = []
-    bot = Bot()
-    bot.login(username=environ['LOGIN'], password=environ['PASSWORD'])
-    following = bot.get_user_following(environ['LOGIN'])
-    for flwing in following:
-        following_list.append(bot.get_username_from_user_id(flwing))
-    return following_list
+def login_loader(username: str, password: str):
+    loader = instaloader.Instaloader()
+    loader.login(username, password)
+    return loader
 
 
-def get_followers():
-    followers_list = []
-    bot = Bot()
-    bot.login(username=environ['LOGIN'], password=environ['PASSWORD'])
-    followers = bot.get_user_followers(environ['LOGIN'])
-    for follower in followers:
-        followers_list.append(bot.get_username_from_user_id(follower))
-    return followers_list
+def get_profile(username: str, loader):
+    profile = instaloader.Profile.from_username(loader.context, username)
+    return profile
 
 
-def get_unfollowers(followers: list, following: list):
-    unfollowers = []
-    for following in following:
-        if following not in followers:
-            unfollowers.append(following)
-    return unfollowers
+def get_followers(profile):
+    followers = []
+    for follower in profile.get_followers():
+        followers.append(follower.username)
+    return followers
 
 
 def main():
-    last_unfollowers = get_unfollowers(get_followers(), get_following())
-    last_unfollowers_length = len(last_unfollowers)
+    last_profile = get_profile(secrets.LOGIN, login_loader(secrets.LOGIN, secrets.PASSWORD))
+    last_followers = get_followers(last_profile)
     while True:
-        unfollowers = get_unfollowers(get_followers(), get_following())
-        if last_unfollowers_length < len(unfollowers):
-            for unfollower in unfollowers:
-                if unfollower not in last_unfollowers:
-                    send_email.send_email(str(unfollower))
-        print('Sleeping for 5 minutes.')
+        profile = get_profile(secrets.LOGIN, login_loader(secrets.LOGIN, secrets.PASSWORD))
+        followers = get_followers(profile)
+        if len(last_followers) > len(followers):
+            for follower in followers:
+                if follower not in last_followers:
+                    send_email.send_email(follower)
+        last_followers = followers
+        print('Sleeping for 5 minutes')
         sleep(300)
-
 
 if __name__ == '__main__':
     main()

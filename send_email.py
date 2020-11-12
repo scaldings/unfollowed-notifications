@@ -1,12 +1,12 @@
 import smtplib
 import unfollowers
-from os import environ
+import secrets
 
 
 def send_email(unfollower: str):
-    send_to = environ['SEND_TO']
-    send_from = environ['SEND_FROM']
-    send_from_password = environ['SEND_FROM_PASSWORD']
+    send_to = secrets.SEND_TO
+    send_from = secrets.SEND_FROM
+    send_from_password = secrets.SEND_FROM_PASSWORD
 
     server = smtplib.SMTP('smtp.gmail.com', 587)
     server.ehlo()
